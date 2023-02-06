@@ -250,12 +250,12 @@ def webhook_bybit():
     buyLeverage = 0.0
     sellLeverage = 0.0
     for position in positions:
-        buyLeverage = position["leverage"]
-        sellLeverage = position["leverage"]
         if position["side"] == 'Buy':
+            buyLeverage = position["leverage"]
             if position["size"] != 0:
                 buyPosQt = position["size"]
         if position["side"] == 'Sell':
+            sellLeverage = position["leverage"]
             if position["size"] != 0:
                 sellPosQt = position["size"]
 
@@ -282,11 +282,14 @@ def webhook_bybit():
             cash = free
         # 산규주문가능수량 계산
         qty = (cash / current_buy_price) * (buyLeverage-1)
-        if qty < 1:
-            qty = str(qty)[0:5]
-        else:
-            qty = math.trunc(qty)
-
+        # if qty < 1:
+        #     qty = str(qty)[0:5]
+        # else:
+        #     qty = math.trunc(qty)
+        print(cash)
+        print(current_buy_price)
+        print(buyLeverage)
+        return
         if comment == "Long Only":
             # 매수/롱 포지션 진입
             lossprice = str(current_buy_price * lossPerPrice)

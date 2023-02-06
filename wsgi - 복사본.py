@@ -9,7 +9,84 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return 'Hello, Flask2!!!'
+
+    # API key ###################################
+    with open("binance-apiKey.txt") as f:
+        lines = f.readlines()
+        apiKey = lines[0].strip()
+        secret = lines[1].strip()
+
+    # binance 객체 생성
+    binance = ccxt.binance(config={
+        'apiKey': apiKey,
+        'secret': secret,
+        'enableRateLimit': True,
+        'options': {
+            'defaultType': 'future'
+        }
+    })
+
+    def get_ccxt_rsi(ohlcv_list: list):
+        df = pd.DataFrame(ohlcv_list)
+        rsi = rsi_calc(df, 14).iloc[-1]
+        return rsi
+
+    # def rsi_calc(ohlc: pd.DataFrame, period: int = 14):
+    #     ohlc = ohlc[4].astype(float)
+    #     delta = ohlc.diff()
+    #     gains, declines = delta.copy(), delta.copy()
+    #     gains[gains < 0] = 0
+    #     declines[declines > 0] = 0
+    #
+    #     _gain = gains.ewm(com=(period - 1), min_periods=period).mean()
+    #     _loss = declines.abs().ewm(com=(period - 1), min_periods=period).mean()
+    #
+    #     RS = _gain / _loss
+    #
+    #     return pd.Series(100 - (100 / (1 + RS)), name="RSI")
+    def rsi_calc(ohlc: pd.DataFrame, period: int = 14):
+        ohlc = ohlc[4].astype(float)
+
+        print(ohlc)
+        delta = ohlc.diff()
+        gains, declines = delta.copy(), delta.copy()
+        gains[gains < 0] = 0
+        declines[declines > 0] = 0
+
+        _gain = gains.ewm(com=(period - 1), min_periods=period).mean()
+        _loss = declines.abs().ewm(com=(period - 1), min_periods=period).mean()
+
+        RS = _gain / _loss
+
+        # u = math.max(ohlc[4] - x[1], 0)
+        # d = math.max(x[1] - ohlc[4], 0)
+
+
+        return pd.Series(100 - (100 / (1 + RS)), name="RSI")
+
+    # 현재 5분봉 RSI 값을 얻어온 후 출력
+    ohlcvs15 = binance.fetch_ohlcv("BTCUSDT", timeframe='15m', limit=15)
+    rsi15 = get_ccxt_rsi(ohlcvs15)
+    print(rsi15)
+
+    ohlcvs60 = binance.fetch_ohlcv("BTCUSDT", timeframe='1h', limit=15)
+    rsi60 = get_ccxt_rsi(ohlcvs60)
+    print(rsi60)
+
+    ohlcvs240 = binance.fetch_ohlcv("BTCUSDT", timeframe='4h', limit=15)
+    rsi240 = get_ccxt_rsi(ohlcvs240)
+    print(rsi240)
+
+    # ohlcvs1d = binance.fetch_ohlcv("BTCUSDT", "1d", limit=15)
+    # rsi1d = get_ccxt_rsi(ohlcvs1d)
+    # print(rsi1d)
+
+    #
+    # for ohlcv in ohlcvs:
+    #     print(ohlcv[4])
+
+
+    return 'Hello, Flask!!!'
 
 @app.route('/webhook/binance', methods = ['POST'])
 def webhook_binance():
@@ -250,12 +327,12 @@ def webhook_bybit():
     buyLeverage = 0.0
     sellLeverage = 0.0
     for position in positions:
-        buyLeverage = position["leverage"]
-        sellLeverage = position["leverage"]
         if position["side"] == 'Buy':
+            buyLeverage = position["leverage"]
             if position["size"] != 0:
                 buyPosQt = position["size"]
         if position["side"] == 'Sell':
+            sellLeverage = position["leverage"]
             if position["size"] != 0:
                 sellPosQt = position["size"]
 
