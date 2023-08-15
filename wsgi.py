@@ -1,15 +1,19 @@
-
 from flask import Flask, request, json
 from pybit.usdt_perpetual import HTTP
 import ccxt
 import math
 import pandas as pd
+import requests
+import json
+import hashlib
+import hmac
 
 app = Flask(__name__)
 
+
 @app.route('/')
 def index():
-    return 'Hello, Flask2!!!'
+    return 'Hello, Flask!!!'
 
 @app.route('/webhook/binance', methods = ['POST'])
 def webhook_binance():
@@ -191,7 +195,6 @@ def webhook_binance():
             )
     return 'ok'
 
-
 @app.route('/webhook/bybit', methods = ['POST'])
 def webhook_bybit():
 
@@ -303,7 +306,7 @@ def webhook_bybit():
                 take_profit=profitprice[0:len(str(current_buy_price))],
                 stop_loss=lossprice[0:len(str(current_buy_price))]
             )
-
+ 
     if orderType == "sell":
         if buyPosQt > 0:
              # 보유포지션 청산
